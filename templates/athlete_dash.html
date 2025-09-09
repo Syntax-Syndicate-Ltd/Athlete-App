@@ -38,7 +38,7 @@
   </nav>
 
   <div class="container my-5">
-    <h3 class="mb-4">Welcome Athlete, {{ profile.athlete_id }} 👋</h3>
+    <h3 class="mb-4">Welcome Athlete, {{ profile.athlete_id or 'ATH123456' }} 👋</h3>
 
     <!-- Buttons to show profile -->
     <div class="mb-4">
@@ -49,52 +49,72 @@
     <!-- Profile Card -->
     <div id="profileCard" class="card mb-4 shadow d-none">
       <div class="card-body">
-        <h5 class="fw-bold">Profile</h5>
+        <h5 class="fw-bold mb-3">Profile</h5>
 
-        <!-- Name & Email -->
-        <p><b>Name:</b> {{ user.name }}</p>
-        <p><b>Email:</b> {{ user.email }}</p>
+        <div class="row">
+          <!-- Profile Picture -->
+          <div class="col-md-3 text-center">
+            <img src="{{ url_for('static', filename=profile.photo or 'pfp.jpg') }}" 
+                 alt="Profile Picture" 
+                 class="img-thumbnail mb-2" 
+                 style="max-width: 150px; height: auto;">
+          </div>
 
-        <!-- View Mode -->
-        <div id="profileView" class="d-none">
-          <p><b>Sport:</b> {{ profile.sport or 'N/A' }}</p>
-          <p><b>Level:</b> {{ profile.level or 'N/A' }}</p>
-          <p><b>Blood Group:</b> {{ profile.blood_group or 'N/A' }}</p>
-          <p><b>Emergency Contact:</b> {{ profile.emergency_contact or 'N/A' }}</p>
-          <p><b>Medical Notes:</b> {{ profile.medical_notes or 'N/A' }}</p>
+          <!-- Details -->
+          <div class="col-md-9">
+            <p><b>Name:</b> {{ user.name }}</p>
+            <p><b>Email:</b> {{ user.email }}</p>
+            <p><b>Athlete ID:</b> {{ profile.athlete_id or 'ATH123456' }}</p>
+
+            <!-- View Mode -->
+            <div id="profileView" class="d-none">
+              <p><b>Sport:</b> {{ profile.sport or 'N/A' }}</p>
+              <p><b>Level:</b> {{ profile.level or 'N/A' }}</p>
+              <p><b>Blood Group:</b> {{ profile.blood_group or 'N/A' }}</p>
+              <p><b>Emergency Contact:</b> {{ profile.emergency_contact or 'N/A' }}</p>
+              <p><b>Medical Notes:</b> {{ profile.medical_notes or 'N/A' }}</p>
+            </div>
+
+            <!-- Update Mode -->
+            <form id="profileForm" method="POST" action="{{ url_for('update_profile') }}" 
+                  class="d-none" enctype="multipart/form-data">
+              <input type="hidden" name="athlete_id" value="{{ profile.athlete_id or 'ATH123456' }}">
+              
+              <div class="mb-2">
+                <label class="form-label"><b>Sport:</b></label>
+                <input type="text" name="sport" class="form-control" value="{{ profile.sport or '' }}">
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label"><b>Level:</b></label>
+                <input type="text" name="level" class="form-control" value="{{ profile.level or '' }}">
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label"><b>Blood Group:</b></label>
+                <input type="text" name="blood_group" class="form-control" value="{{ profile.blood_group or '' }}">
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label"><b>Emergency Contact:</b></label>
+                <input type="text" name="emergency_contact" class="form-control" value="{{ profile.emergency_contact or '' }}">
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label"><b>Medical Notes:</b></label>
+                <textarea name="medical_notes" class="form-control">{{ profile.medical_notes or '' }}</textarea>
+              </div>
+
+              <!-- Upload Profile Picture -->
+              <div class="mb-2">
+                <label class="form-label"><b>Profile Picture:</b></label>
+                <input type="file" name="photo" class="form-control" accept="image/*">
+              </div>
+
+              <button type="submit" class="btn btn-sm btn-primary mt-2">Update Profile</button>
+            </form>
+          </div>
         </div>
-
-        <!-- Update Mode -->
-        <form id="profileForm" method="POST" action="{{ url_for('update_profile') }}" class="d-none">
-          <input type="hidden" name="athlete_id" value="{{ profile.athlete_id }}">
-          
-          <div class="mb-2">
-            <label class="form-label"><b>Sport:</b></label>
-            <input type="text" name="sport" class="form-control" value="{{ profile.sport or '' }}">
-          </div>
-
-          <div class="mb-2">
-            <label class="form-label"><b>Level:</b></label>
-            <input type="text" name="level" class="form-control" value="{{ profile.level or '' }}">
-          </div>
-
-          <div class="mb-2">
-            <label class="form-label"><b>Blood Group:</b></label>
-            <input type="text" name="blood_group" class="form-control" value="{{ profile.blood_group or '' }}">
-          </div>
-
-          <div class="mb-2">
-            <label class="form-label"><b>Emergency Contact:</b></label>
-            <input type="text" name="emergency_contact" class="form-control" value="{{ profile.emergency_contact or '' }}">
-          </div>
-
-          <div class="mb-2">
-            <label class="form-label"><b>Medical Notes:</b></label>
-            <textarea name="medical_notes" class="form-control">{{ profile.medical_notes or '' }}</textarea>
-          </div>
-
-          <button type="submit" class="btn btn-sm btn-primary mt-2">Update Profile</button>
-        </form>
       </div>
     </div>
 
@@ -102,43 +122,14 @@
     <div class="card mb-4 shadow">
       <div class="card-body">
         <h5 class="fw-bold">Medical Records</h5>
-
-        <!-- Add Medical Record Form -->
-        <form method="POST" action="{{ url_for('add_medical_record') }}" class="mb-3">
-          <input type="hidden" name="athlete_id" value="{{ profile.athlete_id }}">
-          <div class="row g-2">
-            <div class="col-md-3">
-              <input type="date" name="date" class="form-control" required>
-            </div>
-            <div class="col-md-5">
-              <input type="text" name="description" class="form-control" placeholder="Description" required>
-            </div>
-            <div class="col-md-3">
-              <input type="text" name="doctor" class="form-control" placeholder="Doctor" required>
-            </div>
-            <div class="col-md-1">
-              <button type="submit" class="btn btn-sm btn-success w-100">Add</button>
-            </div>
-          </div>
-        </form>
-
-        <!-- Medical Records Table -->
         {% if medical_records %}
         <table class="table table-bordered">
           <thead>
-            <tr>
-              <th>Date</th>
-              <th>Description</th>
-              <th>Doctor</th>
-            </tr>
+            <tr><th>Date</th><th>Description</th><th>Doctor</th></tr>
           </thead>
           <tbody>
             {% for record in medical_records %}
-            <tr>
-              <td>{{ record.date }}</td>
-              <td>{{ record.description }}</td>
-              <td>{{ record.doctor }}</td>
-            </tr>
+            <tr><td>{{ record.date }}</td><td>{{ record.description }}</td><td>{{ record.doctor }}</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -148,60 +139,34 @@
       </div>
     </div>
 
-    <!-- Appointment History (Doctor & Trainer) -->
+    <!-- Appointment History -->
     <div class="card mb-4 shadow">
       <div class="card-body">
         <h5 class="fw-bold">Appointment History</h5>
 
-        <!-- Doctor Appointments -->
         <h6 class="mt-2">Doctor Appointments</h6>
         {% if doctor_appointments %}
         <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Doctor</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Date</th><th>Doctor</th><th>Notes</th></tr></thead>
           <tbody>
             {% for appt in doctor_appointments %}
-            <tr>
-              <td>{{ appt.date }}</td>
-              <td>{{ appt.doctor }}</td>
-              <td>{{ appt.notes }}</td>
-            </tr>
+            <tr><td>{{ appt.date }}</td><td>{{ appt.doctor }}</td><td>{{ appt.notes }}</td></tr>
             {% endfor %}
           </tbody>
         </table>
-        {% else %}
-        <p>No doctor appointments yet.</p>
-        {% endif %}
+        {% else %}<p>No doctor appointments yet.</p>{% endif %}
 
-        <!-- Trainer Appointments -->
         <h6 class="mt-3">Trainer Appointments</h6>
         {% if trainer_appointments %}
         <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Trainer</th>
-              <th>Session</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Date</th><th>Trainer</th><th>Session</th></tr></thead>
           <tbody>
             {% for appt in trainer_appointments %}
-            <tr>
-              <td>{{ appt.date }}</td>
-              <td>{{ appt.trainer }}</td>
-              <td>{{ appt.session }}</td>
-            </tr>
+            <tr><td>{{ appt.date }}</td><td>{{ appt.trainer }}</td><td>{{ appt.session }}</td></tr>
             {% endfor %}
           </tbody>
         </table>
-        {% else %}
-        <p>No trainer appointments yet.</p>
-        {% endif %}
+        {% else %}<p>No trainer appointments yet.</p>{% endif %}
       </div>
     </div>
 
@@ -209,27 +174,28 @@
     <div class="card mb-4 shadow">
       <div class="card-body">
         <h5 class="fw-bold">Achievements</h5>
-
         {% if achievements %}
         <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>Year</th>
-              <th>Title</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Year</th><th>Title</th></tr></thead>
           <tbody>
             {% for a in achievements %}
-            <tr>
-              <td>{{ a.year }}</td>
-              <td>{{ a.title }}</td>
-            </tr>
+            <tr><td>{{ a.year }}</td><td>{{ a.title }}</td></tr>
             {% endfor %}
           </tbody>
         </table>
-        {% else %}
-        <p>No achievements yet.</p>
-        {% endif %}
+        {% else %}<p>No achievements yet.</p>{% endif %}
+      </div>
+    </div>
+
+    <!-- Athlete ID Card -->
+    <div class="card mb-4 shadow">
+      <div class="card-body text-center">
+        <h5 class="fw-bold">Athlete ID Card</h5>
+        <p>Your unique ID: <b>{{ profile.athlete_id or 'ATH123456' }}</b></p>
+        <a href="{{ url_for('view_id_card', athlete_id=profile.athlete_id or 'ATH123456') }}" 
+           class="btn btn-primary me-2" target="_blank">View ID Card</a>
+        <a href="{{ url_for('download_id_card', athlete_id=profile.athlete_id or 'ATH123456') }}" 
+           class="btn btn-success">Download ID Card</a>
       </div>
     </div>
 

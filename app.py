@@ -45,6 +45,7 @@ def init_db():
                     blood_group TEXT,
                     emergency_contact TEXT,
                     medical_notes TEXT,
+                    photo TEXT,   -- NEW COLUMN
                     FOREIGN KEY(user_id) REFERENCES users(id)
                 )''')
 
@@ -228,6 +229,128 @@ def athlete_dashboard():
                            doctor_appointments=doctor_appointments,
                            trainer_appointments=trainer_appointments,
                            achievements=achievements)
+import qrcode
+import io
+import base64
+from flask import send_file, render_template, redirect, url_for, flash, request
+import sqlite3
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import mm
+from reportlab.lib.utils import ImageReader
+from textwrap import wrap
+
+IDCARD_SIZE = (85.6*mm, 54*mm)  # Standard credit card size
+
+@app.route("/view_id_card/<athlete_id>")
+def view_id_card(athlete_id):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("SELECT u.name,u.email,p.sport,p.level,p.photo FROM users u JOIN athlete_profiles p ON u.id=p.user_id WHERE p.athlete_id=?",(athlete_id,))
+    row = c.fetchone()
+    conn.close()
+
+    if not row:
+        flash("Athlete not found","danger")
+        return redirect(url_for("athlete_dashboard"))
+
+    name,email,sport,level,photo=row
+
+    # Generate QR Code (points to athlete profile link)
+    qr_data = f"{request.host_url}athlete/{athlete_id}"
+    qr_img = qrcode.make(qr_data)
+    buf = io.BytesIO()
+    qr_img.save(buf, format="PNG")
+    qr_img_b64 = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("utf-8")
+
+    return render_template("id_card.html",
+                           athlete_id=athlete_id,
+                           name=name,email=email,
+                           sport=sport,level=level,
+                           photo=photo,
+                           qr_img=qr_img_b64)
+
+
+
+@app.route("/download_id_card/<athlete_id>")
+def download_id_card(athlete_id):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("""
+        SELECT u.name, u.email, p.sport, p.level 
+        FROM users u 
+        JOIN athlete_profiles p ON u.id = p.user_id 
+        WHERE p.athlete_id = ?
+    """, (athlete_id,))
+    row = c.fetchone()
+    conn.close()
+
+    if not row:
+        flash("Athlete not found", "danger")
+        return redirect(url_for("athlete_dashboard"))
+
+    name, email, sport, level = row
+
+    # Generate QR Code
+    qr_data = f"{request.host_url}athlete/{athlete_id}"
+    qr_img = qrcode.make(qr_data)
+    qr_buf = io.BytesIO()
+    qr_img.save(qr_buf, format="PNG")
+    qr_buf.seek(0)
+
+    # Create PDF
+    pdf_buf = io.BytesIO()
+    c = canvas.Canvas(pdf_buf, pagesize=IDCARD_SIZE)
+
+    # Card border
+    border_margin = 5 * mm
+    c.roundRect(border_margin, border_margin, 75*mm, 44*mm, 4*mm)
+
+    # Inner margins
+    margin_x = 8 * mm
+    margin_y = 8 * mm
+
+    # Title
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(margin_x, 46*mm, "Athlete ID Card")
+
+    # Profile Picture (use sample if real one not available)
+    try:
+        pfp = ImageReader("static/pfp.jpg")  # sample picture
+        c.drawImage(pfp, margin_x, 28*mm, 15*mm, 15*mm, mask='auto')
+    except:
+        pass
+
+    # Details
+    c.setFont("Helvetica", 8.5)
+    c.drawString(28*mm, 42*mm, f"ID: {athlete_id}")
+    c.drawString(28*mm, 37*mm, f"Name: {name}")
+    c.drawString(28*mm, 32*mm, f"Sport: {sport if sport else 'N/A'}")
+    c.drawString(28*mm, 27*mm, f"Level: {level if level else 'N/A'}")
+
+    # Email (wrap if too long)
+    email_lines = wrap("Email: " + email, 30)
+    y = 22*mm
+    for line in email_lines:
+        c.drawString(margin_x, y, line)
+        y -= 4*mm
+
+    # QR Code — slightly smaller and moved inward
+    qr_reader = ImageReader(qr_buf)
+    c.drawImage(qr_reader, 55*mm, 15*mm, 22*mm, 22*mm)
+
+    c.showPage()
+    c.save()
+    pdf_buf.seek(0)
+
+    return send_file(
+        pdf_buf,
+        as_attachment=True,
+        download_name=f"athlete_{athlete_id}_idcard.pdf",
+        mimetype="application/pdf"
+    )
+
+
+
 
 # ---------------- UPDATE PROFILE ---------------- #
 @app.route("/update_profile", methods=["POST"])
