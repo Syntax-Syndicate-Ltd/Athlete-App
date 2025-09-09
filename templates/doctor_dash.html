@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doctor Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Doctor Dashboard</a>
+      <div class="d-flex">
+        <span class="navbar-text text-white me-3">Welcome, {{ name }}</span>
+        <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-4">
+
+    <!-- Unique Doctor Card -->
+    <div class="card text-center shadow-sm mb-4" style="border:2px dashed #6c757d; border-radius:15px;">
+      <div class="card-body">
+        <h5 class="card-title">Unique Doctor Card</h5>
+        <p><strong>ID:</strong> {{ profile.doctor_id }}</p>
+        <p><strong>Name:</strong> {{ name }}</p>
+        <p><strong>Specialization:</strong> {{ profile.specialization|join(', ') }}</p>
+        <p><strong>Experience:</strong> {{ profile.experience }}</p>
+        <hr>
+        <div class="d-flex justify-content-center">
+          <img src="{{ url_for('static', filename='img/barcode.png') }}" alt="Doctor Barcode" 
+               class="img-fluid" style="max-width:200px; border:1px solid #ddd; padding:6px; border-radius:8px;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Appointments -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-success text-white">Upcoming Appointments</div>
+      <div class="card-body">
+        {% if upcoming %}
+          <ul class="list-group">
+            {% for a in upcoming %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  {{ a.date }} → Athlete {{ a.athlete_id }}
+                  <span class="badge bg-info">{{ a.notes }}</span>
+                  <span class="badge 
+                    {% if a.status == 'Approved' %} bg-primary
+                    {% elif a.status == 'Rejected' %} bg-danger
+                    {% else %} bg-warning text-dark {% endif %}">
+                    {{ a.status or 'Pending' }}
+                  </span>
+                </div>
+                {% if a.status == 'Pending' %}
+                  <div>
+                    <a href="{{ url_for('update_appointment_status', role='Doctor', appt_id=a.id, action='approve') }}" class="btn btn-sm btn-success">Approve</a>
+                    <a href="{{ url_for('update_appointment_status', role='Doctor', appt_id=a.id, action='reject') }}" class="btn btn-sm btn-danger">Reject</a>
+                  </div>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted">No upcoming appointments.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Appointment History -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-secondary text-white">Appointment History</div>
+      <div class="card-body">
+        {% if history %}
+          <ul class="list-group">
+            {% for h in history %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  {{ h.date }} → Athlete {{ h.athlete_id }}
+                  <span class="badge bg-info">{{ h.notes }}</span>
+                  <span class="badge 
+                    {% if h.status == 'Approved' %} bg-primary
+                    {% elif h.status == 'Rejected' %} bg-danger
+                    {% else %} bg-warning text-dark {% endif %}">
+                    {{ h.status or 'Pending' }}
+                  </span>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted">No history available.</p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

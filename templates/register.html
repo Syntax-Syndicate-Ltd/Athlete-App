@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card shadow-lg p-4">
+          <h2 class="text-center mb-4">Register</h2>
+          
+          <!-- Flash messages -->
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <div class="alert alert-{{category}} alert-dismissible fade show" role="alert">
+                  {{ message }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+          
+          <form method="POST">
+            <div class="mb-3">
+              <label>Full Name</label>
+              <input type="text" class="form-control" name="name" required>
+            </div>
+            <div class="mb-3">
+              <label>Email</label>
+              <input type="email" class="form-control" name="email" required>
+            </div>
+            <div class="mb-3">
+              <label>Password</label>
+              <input type="password" class="form-control" name="password" required>
+            </div>
+            <div class="mb-3">
+              <label>Role</label>
+              <select class="form-select" name="role" required>
+                <option value="">Select Role</option>
+                <option value="Athlete">Athlete</option>
+                <option value="Trainer">Trainer</option>
+                <option value="Doctor">Doctor</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label>Government ID Number</label>
+              <input type="text" class="form-control" name="govt_id" required>
+            </div>
+            <button class="btn btn-success w-100">Register</button>
+          </form>
+
+          <p class="text-center mt-3">
+            Already have an account? <a href="{{ url_for('login') }}">Login</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
