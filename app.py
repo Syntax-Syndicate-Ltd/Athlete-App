@@ -1,6 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, abort
 import sqlite3, os, random
-
+import qrcode
+import io
+import base64
+from PIL import Image
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
@@ -350,6 +353,38 @@ def download_id_card(athlete_id):
     )
 
 
+@app.route("/athlete/<athlete_id>")
+def athlete_profile(athlete_id):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("""
+        SELECT u.name, u.email, p.sport, p.level
+        FROM users u
+        JOIN athlete_profiles p ON u.id = p.user_id
+        WHERE p.athlete_id = ?
+    """, (athlete_id,))
+    row = c.fetchone()
+    conn.close()
+
+    if not row:
+        abort(404)
+
+    name, email, sport, level = row
+
+    # Generate QR Code as base64 for web display
+    qr_data = f"{request.host_url}athlete/{athlete_id}"
+    qr_img = qrcode.make(qr_data)
+    qr_buf = io.BytesIO()
+    qr_img.save(qr_buf, format='PNG')
+    qr_base64 = base64.b64encode(qr_buf.getvalue()).decode("ascii")
+
+    return render_template("athlete_profile.html",
+                           athlete_id=athlete_id,
+                           name=name,
+                           email=email,
+                           sport=sport,
+                           level=level,
+                           qr_base64=qr_base64)
 
 
 # ---------------- UPDATE PROFILE ---------------- #
